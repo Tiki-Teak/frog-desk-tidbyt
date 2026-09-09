@@ -2,32 +2,16 @@ name: Render and Push Frog Desk
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/5 * * * *"
 
 jobs:
   push:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Install Pixlet
+      - name: Disabled scheduled push
         run: |
-          curl -LO https://github.com/tidbyt/pixlet/releases/latest/download/pixlet-linux-amd64
-          chmod +x pixlet-linux-amd64
-          sudo mv pixlet-linux-amd64 /usr/local/bin/pixlet
-
-      - name: Render
-        run: pixlet render frog_desk.star
-
-      - name: Push to Tidbyt
-        env:
-          TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
-          TIDBYT_DEVICE_ID: ${{ secrets.TIDBYT_DEVICE_ID }}
-        run: |
-          pixlet push \
-            --api-token "$TIDBYT_API_TOKEN" \
-            --installation-id "frog-desk" \
-            "$TIDBYT_DEVICE_ID" \
-            frog_desk.webp
+          echo "Scheduled Frog Desk pushing is disabled."
+          echo "Use manual pushes while the app is being built."
