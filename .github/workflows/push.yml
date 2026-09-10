@@ -25,8 +25,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y jq
 
           PIXLET_URL="$(curl -fsSL https://api.github.com/repos/tidbyt/pixlet/releases/latest \
             | jq -r '.assets[].browser_download_url | select(test("linux.*(amd64|x86_64).*tar.gz$"; "i"))' \
@@ -44,33 +42,53 @@ jobs:
           chmod +x "$PIXLET_BIN"
           sudo install -m 0755 "$PIXLET_BIN" /usr/local/bin/pixlet
 
-          pixlet version || pixlet --help
+          pixlet --help >/dev/null
 
-      - name: Verify standalone Star file
+      - name: Prepare clean render folder
         shell: bash
         run: |
           set -euo pipefail
-          head -n 5 frog_desk.star
-          if grep -q 'assets.star' frog_desk.star; then
-            echo "frog_desk.star still references assets.star"
+
+          rm -rf /tmp/frog-render
+          mkdir -p /tmp/frog-render
+
+          cp "$GITHUB_WORKSPACE/frog_desk.star" /tmp/frog-render/frog_desk.star
+
+          cd /tmp/frog-render
+
+          echo "---- LOADS ----"
+          grep -n '^load' frog_desk.star
+
+          echo "---- ASSETS CHECK ----"
+          if grep -n 'assets.star' frog_desk.star; then
+            echo "Unexpected assets.star reference found."
             exit 1
+          else
+            echo "No assets.star reference."
           fi
 
       - name: Render Frog Desk
         shell: bash
         run: |
           set -euo pipefail
+
+          cd /tmp/frog-render
           rm -f frog_desk.webp
+
           pixlet render frog_desk.star
-          ls -l frog_desk.webp
+
+          test -f frog_desk.webp
+          ls -lh frog_desk.webp
 
       - name: Push to Tidbyt
+        shell: bash
         env:
           TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
-        shell: bash
         run: |
           set -euo pipefail
+
           test -n "$TIDBYT_API_TOKEN"
+          cd /tmp/frog-render
 
           pixlet push \
             --api-token "$TIDBYT_API_TOKEN" \
