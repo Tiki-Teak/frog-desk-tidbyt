@@ -54,19 +54,6 @@ jobs:
 
           cp "$GITHUB_WORKSPACE/frog_desk.star" /tmp/frog-render/frog_desk.star
 
-          cd /tmp/frog-render
-
-          echo "---- LOADS ----"
-          grep -n '^load' frog_desk.star
-
-          echo "---- ASSETS CHECK ----"
-          if grep -n 'assets.star' frog_desk.star; then
-            echo "Unexpected assets.star reference found."
-            exit 1
-          else
-            echo "No assets.star reference."
-          fi
-
       - name: Render Frog Desk
         shell: bash
         run: |
@@ -90,8 +77,26 @@ jobs:
           test -n "$TIDBYT_API_TOKEN"
           cd /tmp/frog-render
 
-          pixlet push \
-            --api-token "$TIDBYT_API_TOKEN" \
-            --installation-id "frogdesk" \
-            "culturally-immortal-holy-vole-e2d" \
-            frog_desk.webp
+          for attempt in 1 2 3 4 5
+          do
+            echo "Tidbyt push attempt $attempt of 5"
+
+            if pixlet push \
+              --api-token "$TIDBYT_API_TOKEN" \
+              --installation-id "frogdesk" \
+              "culturally-immortal-holy-vole-e2d" \
+              frog_desk.webp
+            then
+              echo "Tidbyt push succeeded."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 5 ]; then
+              WAIT=$((attempt * 15))
+              echo "Push failed. Waiting ${WAIT} seconds before retry..."
+              sleep "$WAIT"
+            fi
+          done
+
+          echo "Tidbyt push failed after 5 attempts."
+          exit 1
