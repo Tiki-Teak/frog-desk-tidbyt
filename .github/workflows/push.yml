@@ -1,17 +1,13 @@
-name: Render and Push Frog Desk
+name: Frog Desk Manual
 
 on:
   workflow_dispatch:
 
 jobs:
-  push:
+  info:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Disabled scheduled push
+      - name: Manual only
         run: |
-          echo "Scheduled Frog Desk pushing is disabled."
-          echo "Use manual pushes while the app is being built."
+          echo "Automatic Frog Desk pushes are disabled while v5 is being tested."
+          echo "The Star file chooses a random turn each time Pixlet renders it."
