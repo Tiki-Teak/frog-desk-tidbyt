@@ -1,13 +1,79 @@
-name: Frog Desk Manual
+name: Frog Desk Auto Refresh
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frog-desk-auto-refresh
+  cancel-in-progress: true
 
 jobs:
-  info:
+  push:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - name: Manual only
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Pixlet
+        shell: bash
         run: |
-          echo "Automatic Frog Desk pushes are disabled while v5 is being tested."
-          echo "The Star file chooses a random turn each time Pixlet renders it."
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+          PIXLET_URL="$(curl -fsSL https://api.github.com/repos/tidbyt/pixlet/releases/latest \
+            | jq -r '.assets[].browser_download_url | select(test("linux.*(amd64|x86_64).*tar.gz$"; "i"))' \
+            | head -n 1)"
+
+          test -n "$PIXLET_URL"
+
+          curl -fsSL "$PIXLET_URL" -o /tmp/pixlet.tar.gz
+          mkdir -p /tmp/pixlet-release
+          tar -xzf /tmp/pixlet.tar.gz -C /tmp/pixlet-release
+
+          PIXLET_BIN="$(find /tmp/pixlet-release -type f -name pixlet | head -n 1)"
+          test -n "$PIXLET_BIN"
+
+          chmod +x "$PIXLET_BIN"
+          sudo install -m 0755 "$PIXLET_BIN" /usr/local/bin/pixlet
+
+          pixlet version || pixlet --help
+
+      - name: Verify standalone Star file
+        shell: bash
+        run: |
+          set -euo pipefail
+          head -n 5 frog_desk.star
+          if grep -q 'assets.star' frog_desk.star; then
+            echo "frog_desk.star still references assets.star"
+            exit 1
+          fi
+
+      - name: Render Frog Desk
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f frog_desk.webp
+          pixlet render frog_desk.star
+          ls -l frog_desk.webp
+
+      - name: Push to Tidbyt
+        env:
+          TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$TIDBYT_API_TOKEN"
+
+          pixlet push \
+            --api-token "$TIDBYT_API_TOKEN" \
+            --installation-id "frogdesk" \
+            "culturally-immortal-holy-vole-e2d" \
+            frog_desk.webp
