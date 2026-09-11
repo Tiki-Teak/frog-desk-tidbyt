@@ -25,45 +25,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           PIXLET_URL="$(curl -fsSL https://api.github.com/repos/tidbyt/pixlet/releases/latest \
             | jq -r '.assets[].browser_download_url | select(test("linux.*(amd64|x86_64).*tar.gz$"; "i"))' \
             | head -n 1)"
-
           test -n "$PIXLET_URL"
-
           curl -fsSL "$PIXLET_URL" -o /tmp/pixlet.tar.gz
           mkdir -p /tmp/pixlet-release
           tar -xzf /tmp/pixlet.tar.gz -C /tmp/pixlet-release
-
           PIXLET_BIN="$(find /tmp/pixlet-release -type f -name pixlet | head -n 1)"
           test -n "$PIXLET_BIN"
-
           chmod +x "$PIXLET_BIN"
           sudo install -m 0755 "$PIXLET_BIN" /usr/local/bin/pixlet
-
           pixlet --help >/dev/null
 
       - name: Prepare clean render folder
         shell: bash
         run: |
           set -euo pipefail
-
           rm -rf /tmp/frog-render
           mkdir -p /tmp/frog-render
-
           cp "$GITHUB_WORKSPACE/frog_desk.star" /tmp/frog-render/frog_desk.star
 
       - name: Render Frog Desk
         shell: bash
         run: |
           set -euo pipefail
-
           cd /tmp/frog-render
           rm -f frog_desk.webp
-
           pixlet render frog_desk.star
-
           test -f frog_desk.webp
           ls -lh frog_desk.webp
 
@@ -73,14 +62,12 @@ jobs:
           TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
         run: |
           set -euo pipefail
-
           test -n "$TIDBYT_API_TOKEN"
           cd /tmp/frog-render
 
           for attempt in 1 2 3 4 5
           do
             echo "Tidbyt push attempt $attempt of 5"
-
             if pixlet push \
               --api-token "$TIDBYT_API_TOKEN" \
               --installation-id "frogdesk" \
