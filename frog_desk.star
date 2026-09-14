@@ -1,6 +1,7 @@
 load("render.star", "render")
 load("encoding/base64.star", "base64")
 load("random.star", "random")
+load("time.star", "time")
 
 # Frog Desk v8
 # Current scenes: Default, Side-eye, Fly, Glitch Frog, Sleep Frog, Vacant.
@@ -3780,47 +3781,23 @@ def _append_scene(children, name):
         fail("unknown scene: %s" % name)
 
 def _choose_turn():
-    # 16,000 equally likely slots per render:
-    #   5%  Vacant
-    #   45% Default-only
-    #   50% special pool.
-    # Special pool is split evenly among Fly / Side-eye / Glitch / Sleep,
-    # with each special appearing middle, first, last, or by itself.
-    pick = random.number(0, 16000)
-    if pick < 800:
+    # Reseed every render so scheduled refreshes make a fresh selection.
+    random.seed(time.now().unix)
+
+    # 30,000 equally likely slots per render:
+    #   Vacant: 9,900 slots = 33%
+    #   Each of the other five scenes: 4,020 slots = 13.4%
+    pick = random.number(0, 30000)
+    if pick < 9900:
         return ["vacant"]
-    elif pick < 8000:
-        return ["default", "default", "default"]
-    elif pick < 8500:
-        return ["default", "fly", "default"]
-    elif pick < 9000:
-        return ["fly", "default", "default"]
-    elif pick < 9500:
-        return ["default", "default", "fly"]
-    elif pick < 10000:
-        return ["fly"]
-    elif pick < 10500:
-        return ["default", "side", "default"]
-    elif pick < 11000:
-        return ["side", "default", "default"]
-    elif pick < 11500:
-        return ["default", "default", "side"]
-    elif pick < 12000:
+    elif pick < 13920:
+        return ["default"]
+    elif pick < 17940:
         return ["side"]
-    elif pick < 12500:
-        return ["default", "glitch", "default"]
-    elif pick < 13000:
-        return ["glitch", "default", "default"]
-    elif pick < 13500:
-        return ["default", "default", "glitch"]
-    elif pick < 14000:
+    elif pick < 21960:
+        return ["fly"]
+    elif pick < 25980:
         return ["glitch"]
-    elif pick < 14500:
-        return ["default", "sleep", "default"]
-    elif pick < 15000:
-        return ["sleep", "default", "default"]
-    elif pick < 15500:
-        return ["default", "default", "sleep"]
     else:
         return ["sleep"]
 
