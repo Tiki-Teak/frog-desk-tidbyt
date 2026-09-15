@@ -70,7 +70,7 @@ jobs:
             echo "Tidbyt push attempt $attempt of 5"
             if pixlet push \
               --api-token "$TIDBYT_API_TOKEN" \
-              --installation-id "frogdesk" \
+              --installation-id "FrogDesk" \
               "culturally-immortal-holy-vole-e2d" \
               frog_desk.webp
             then
